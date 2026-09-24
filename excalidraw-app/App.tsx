@@ -375,6 +375,53 @@ const initializeScene = async (opts: {
 const ExcalidrawWrapper = () => {
   const excalidrawAPI = useExcalidrawAPI();
 
+  const openSketchoraFile = useCallback(async () => {
+    if (!window.sketchora || !excalidrawAPI) {
+      return;
+    }
+
+    const result = await window.sketchora.openFile();
+
+    if (!result) {
+      return;
+    }
+
+    try {
+      const data = JSON.parse(result.content);
+
+      excalidrawAPI.updateScene({
+        elements: restoreElements(data.elements || [], null, {
+          repairBindings: true,
+        }),
+        appState: restoreAppState(data.appState || {}, null),
+        captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      });
+
+      if (data.files) {
+        excalidrawAPI.addFiles(Object.values(data.files));
+      }
+    } catch (error) {
+      console.error("Failed to open Sketchora file:", error);
+    }
+  }, [excalidrawAPI]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const modifier = event.ctrlKey || event.metaKey;
+
+      if (modifier && event.key.toLowerCase() === "o") {
+        event.preventDefault();
+        openSketchoraFile();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [openSketchoraFile]);
+
   const [errorMessage, setErrorMessage] = useState("");
   const isCollabDisabled = isRunningInIframe();
 

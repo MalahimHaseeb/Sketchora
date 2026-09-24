@@ -21,7 +21,11 @@
     "@vitest/coverage-v8": "3.0.7",
     "@vitest/ui": "2.0.5",
     "chai": "4.3.6",
+    "concurrently": "10.0.5",
+    "cross-env": "10.1.0",
     "dotenv": "16.0.1",
+    "electron": "44.4.5",
+    "electron-builder": "26.15.3",
     "eslint-config-prettier": "8.5.0",
     "eslint-config-react-app": "7.0.1",
     "eslint-plugin-import": "2.31.0",
@@ -41,7 +45,8 @@
     "vite-plugin-pwa": "0.21.1",
     "vite-plugin-svgr": "4.2.0",
     "vitest": "3.0.6",
-    "vitest-canvas-mock": "0.3.3"
+    "vitest-canvas-mock": "0.3.3",
+    "wait-on": "9.1.0"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -88,9 +93,12 @@
     "release:latest": "node scripts/release.js --tag=latest",
     "rm:build": "rimraf --glob excalidraw-app/build excalidraw-app/dist excalidraw-app/dev-dist packages/*/dist packages/*/build examples/*/build examples/*/dist",
     "rm:node_modules": "rimraf --glob node_modules excalidraw-app/node_modules packages/*/node_modules",
-    "clean-install": "yarn rm:node_modules && yarn install"
+    "clean-install": "yarn rm:node_modules && yarn install",
+    "electron": "electron electron/main.cjs",
+    "electron:dev": "concurrently \"yarn start\" \"wait-on http://localhost:3001 && electron electron/main.cjs\""
   },
   "resolutions": {
     "strip-ansi": "6.0.1"
-  }
+  },
+  "main": "electron/main.cjs"
 }
