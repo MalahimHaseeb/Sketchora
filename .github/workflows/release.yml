@@ -16,10 +16,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: yarn
+
       - name: Cache electron-builder
         uses: actions/cache@v4
         with:
@@ -33,10 +35,24 @@ jobs:
           key: ${{ runner.os }}-electron-cache-${{ hashFiles('yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-electron-cache-
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            excalidraw-app/node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
       - run: yarn install --frozen-lockfile
+
       - run: yarn desktop:dist
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: actions/upload-artifact@v4
         with:
           name: sketchora-${{ matrix.os }}
@@ -55,9 +71,11 @@ jobs:
         with:
           path: release-artifacts
           merge-multiple: true
+
       - name: Publish to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          generate_release_notes: true
           files: release-artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
