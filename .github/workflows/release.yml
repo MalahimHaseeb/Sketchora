@@ -5,6 +5,9 @@ on:
     tags: ["v*.*.*"]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -37,15 +40,24 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: sketchora-${{ matrix.os }}
-          path: release/*
-      - name: Publish to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
+          path: |
             release/*.exe
             release/*.dmg
             release/*.AppImage
             release/*.deb
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+          merge-multiple: true
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
