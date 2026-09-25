@@ -15,6 +15,7 @@
 build
 dist
 firebase
+release/
 logs
 node_modules
 npm-debug.log*

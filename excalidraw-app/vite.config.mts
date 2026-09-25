@@ -12,11 +12,12 @@ export default defineConfig(({ mode }) => {
   // To load .env variables
   const envVars = loadEnv(mode, `../`);
   // https://vitejs.dev/config/
-  return {
+   return {
+    base: "./",
     server: {
       port: Number(envVars.VITE_APP_PORT || 3000),
       // open the browser
-      open: true,
+      open: false,
     },
     // We need to specify the envDir since now there are no
     //more located in parallel with the vite.config.ts file but in parent dir
