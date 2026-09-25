@@ -2,8 +2,7 @@
 
 An unofficial cross-platform desktop app for [Excalidraw](https://github.com/excalidraw/excalidraw), the open-source, hand-drawn style whiteboard tool. Sketchora wraps Excalidraw in Electron so you get a native app with real file handling, instead of a browser tab.
 
-![platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
-![license](https://img.shields.io/badge/license-MIT-green)
+![platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue) ![license](https://img.shields.io/badge/license-MIT-green)
 
 ## Features
 
@@ -21,11 +20,11 @@ Grab the latest build for your operating system directly from the Releases page:
 
 Every tagged release is built automatically for all three platforms by our GitHub Actions workflow, so the installers you see there are always fresh off the latest tag.
 
-| OS | File | Notes |
-|---|---|---|
-| Windows | `Sketchora-Setup-x.x.x.exe` | Installer |
-| macOS | `Sketchora-x.x.x.dmg` | Universal build |
-| Linux | `Sketchora-x.x.x.AppImage` or `.deb` | AppImage needs no install |
+| OS      | File                                 | Notes                     |
+| ------- | ------------------------------------ | ------------------------- |
+| Windows | `Sketchora-Setup-x.x.x.exe`          | Installer                 |
+| macOS   | `Sketchora-x.x.x.dmg`                | Universal build           |
+| Linux   | `Sketchora-x.x.x.AppImage` or `.deb` | AppImage needs no install |
 
 ### Installation notes
 
@@ -34,12 +33,14 @@ Every tagged release is built automatically for all three platforms by our GitHu
 **macOS**: Gatekeeper will block the app on first launch ("Apple could not verify..."). Right-click the app, choose **Open**, then confirm in the dialog. You only need to do this once.
 
 **Linux (AppImage)**:
+
 ```bash
 chmod +x Sketchora-x.x.x-linux-x86_64.AppImage
 ./Sketchora-x.x.x-linux-x86_64.AppImage
 ```
 
 **Linux (deb)**:
+
 ```bash
 sudo dpkg -i Sketchora-x.x.x-linux-amd64.deb
 sudo apt-get install -f
@@ -52,6 +53,7 @@ Found a bug or something not working right? Open an issue here:
 **[github.com/MalahimHaseeb/sketchora/issues/new](https://github.com/MalahimHaseeb/sketchora/issues/new)**
 
 Please include:
+
 - Your OS and version
 - Steps to reproduce
 - Screenshots if it's a visual bug
@@ -85,11 +87,13 @@ yarn build:packages
 ```
 
 Run the web dev server:
+
 ```bash
 yarn start
 ```
 
 In a separate terminal, run the Electron shell pointed at it:
+
 ```bash
 yarn electron:dev
 ```
