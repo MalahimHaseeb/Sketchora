@@ -115,7 +115,7 @@
   "build": {
     "appId": "com.sketchora.app",
     "productName": "Sketchora",
-    "icon": "build/icon",
+    "icon": "build/icons/icon",
     "artifactName": "Sketchora-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "release"

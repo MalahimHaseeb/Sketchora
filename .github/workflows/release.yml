@@ -5,6 +5,9 @@ on:
     tags: ["v*.*.*"]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -17,6 +20,19 @@ jobs:
         with:
           node-version: 22
           cache: yarn
+      - name: Cache electron-builder
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+            ~/AppData/Local/electron
+            ~/AppData/Local/electron-builder
+            ~/Library/Caches/electron
+            ~/Library/Caches/electron-builder
+          key: ${{ runner.os }}-electron-cache-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-cache-
       - run: yarn install --frozen-lockfile
       - run: yarn desktop:dist
         env:
@@ -24,4 +40,24 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: sketchora-${{ matrix.os }}
-          path: release/*
+          path: |
+            release/*.exe
+            release/*.dmg
+            release/*.AppImage
+            release/*.deb
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+          merge-multiple: true
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-artifacts/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
