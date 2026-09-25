@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "excalidraw-monorepo",
+  "name": "sketchora",
   "packageManager": "yarn@1.22.22",
   "workspaces": [
     "excalidraw-app",
@@ -95,10 +95,73 @@
     "rm:node_modules": "rimraf --glob node_modules excalidraw-app/node_modules packages/*/node_modules",
     "clean-install": "yarn rm:node_modules && yarn install",
     "electron": "electron electron/main.cjs",
-    "electron:dev": "concurrently \"yarn start\" \"wait-on http://localhost:3001 && electron electron/main.cjs\""
+    "electron:dev": "concurrently \"yarn start\" \"wait-on http://localhost:3001 && electron electron/main.cjs\"",
+    "desktop:build": "yarn build && electron-builder",
+    "desktop:dist": "yarn build && electron-builder --publish never",
+    "desktop:linux": "yarn build && electron-builder --linux",
+    "desktop:win": "yarn build && electron-builder --win",
+    "desktop:mac": "yarn build && electron-builder --mac"
   },
   "resolutions": {
     "strip-ansi": "6.0.1"
   },
-  "main": "electron/main.cjs"
+  "main": "electron/main.cjs",
+  "version": "0.1.0",
+  "description": "Sketchora — an unofficial desktop drawing application based on Excalidraw.",
+  "author": {
+    "name": "Malahim Haseeb",
+    "email": "malahimaxtra@gmail.com"
+  },
+  "build": {
+    "appId": "com.sketchora.app",
+    "productName": "Sketchora",
+    "icon": "build/icon",
+    "artifactName": "Sketchora-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "excalidraw-app/build/**/*",
+      "packages/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Graphics",
+      "synopsis": "Desktop diagramming and whiteboard application",
+      "description": "Sketchora is an unofficial desktop application based on Excalidraw.",
+      "maintainer": "Malahim Haseeb malahimhaseeb@gmail.com>",
+      "desktop": {
+        "entry": {
+          "Name": "Sketchora",
+          "Comment": "Desktop diagramming and whiteboard application",
+          "Categories": "Graphics;"
+        }
+      }
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ]
+    },
+    "fileAssociations": [
+      {
+        "ext": "excalidraw",
+        "name": "Sketchora Drawing",
+        "role": "Editor",
+        "mimeType": "application/vnd.excalidraw+json"
+      }
+    ]
+  }
 }

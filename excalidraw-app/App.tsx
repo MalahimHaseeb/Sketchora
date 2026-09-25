@@ -7,6 +7,7 @@ import {
   useEditorInterface,
   ExcalidrawAPIProvider,
   useExcalidrawAPI,
+  serializeAsJSON,
 } from "@excalidraw/excalidraw";
 import { trackEvent } from "@excalidraw/excalidraw/analytics";
 import { getDefaultAppState } from "@excalidraw/excalidraw/appState";
@@ -375,52 +376,148 @@ const initializeScene = async (opts: {
 const ExcalidrawWrapper = () => {
   const excalidrawAPI = useExcalidrawAPI();
 
+  const [currentFilePath, setCurrentFilePath] = useState<string | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const nativeOperationRef = useRef(false);
+
+  const updateWindowTitle = useCallback(
+    (filePath: string | null, dirty: boolean) => {
+      if (!window.sketchora) {
+        return;
+      }
+
+      const fileName = filePath ? filePath.split(/[\\/]/).pop() : "Untitled";
+
+      document.title = `${dirty ? "*" : ""}${fileName} - Sketchora`;
+      window.sketchora.setWindowTitle(filePath, dirty);
+    },
+    [],
+  );
+
+  const applyOpenedFile = useCallback(
+    (result: { filePath: string; content: string }) => {
+      if (!excalidrawAPI) {
+        return;
+      }
+
+      try {
+        nativeOperationRef.current = true;
+        const data = JSON.parse(result.content);
+
+        excalidrawAPI.updateScene({
+          elements: restoreElements(data.elements || [], null, {
+            repairBindings: true,
+          }),
+          appState: restoreAppState(data.appState || {}, null),
+          captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+        });
+
+        if (data.files) {
+          excalidrawAPI.addFiles(Object.values(data.files));
+        }
+
+        setCurrentFilePath(result.filePath);
+        setIsDirty(false);
+        updateWindowTitle(result.filePath, false);
+      } catch (error) {
+        console.error("Failed to open Sketchora file:", error);
+      } finally {
+        window.setTimeout(() => {
+          nativeOperationRef.current = false;
+        }, 0);
+      }
+    },
+    [excalidrawAPI, updateWindowTitle],
+  );
+
   const openSketchoraFile = useCallback(async () => {
     if (!window.sketchora || !excalidrawAPI) {
       return;
     }
 
     const result = await window.sketchora.openFile();
+    if (result) {
+      applyOpenedFile(result);
+    }
+  }, [applyOpenedFile, excalidrawAPI]);
 
-    if (!result) {
+  const saveSketchoraFile = useCallback(
+    async (saveAs = false) => {
+      if (!window.sketchora || !excalidrawAPI) {
+        return;
+      }
+
+      const content = serializeAsJSON(
+        excalidrawAPI.getSceneElementsIncludingDeleted(),
+        excalidrawAPI.getAppState(),
+        excalidrawAPI.getFiles(),
+        "local",
+      );
+
+      const result =
+        saveAs || !currentFilePath
+          ? await window.sketchora.saveFileAs({ content })
+          : await window.sketchora.saveFile({
+              filePath: currentFilePath,
+              content,
+            });
+
+      if (!result) {
+        return;
+      }
+
+      setCurrentFilePath(result.filePath);
+      setIsDirty(false);
+      updateWindowTitle(result.filePath, false);
+    },
+    [currentFilePath, excalidrawAPI, updateWindowTitle],
+  );
+
+  const newSketchoraFile = useCallback(() => {
+    if (!excalidrawAPI) {
       return;
     }
 
-    try {
-      const data = JSON.parse(result.content);
-
-      excalidrawAPI.updateScene({
-        elements: restoreElements(data.elements || [], null, {
-          repairBindings: true,
-        }),
-        appState: restoreAppState(data.appState || {}, null),
-        captureUpdate: CaptureUpdateAction.IMMEDIATELY,
-      });
-
-      if (data.files) {
-        excalidrawAPI.addFiles(Object.values(data.files));
-      }
-    } catch (error) {
-      console.error("Failed to open Sketchora file:", error);
-    }
-  }, [excalidrawAPI]);
+    nativeOperationRef.current = true;
+    excalidrawAPI.resetScene();
+    setCurrentFilePath(null);
+    setIsDirty(false);
+    updateWindowTitle(null, false);
+    window.setTimeout(() => {
+      nativeOperationRef.current = false;
+    }, 0);
+  }, [excalidrawAPI, updateWindowTitle]);
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const modifier = event.ctrlKey || event.metaKey;
+    if (!window.sketchora) {
+      return;
+    }
 
-      if (modifier && event.key.toLowerCase() === "o") {
-        event.preventDefault();
-        openSketchoraFile();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
+    const removeNewListener = window.sketchora.onMenuNew(newSketchoraFile);
+    const removeOpenListener = window.sketchora.onMenuOpen(() => {
+      void openSketchoraFile();
+    });
+    const removeSaveListener = window.sketchora.onMenuSave(() => {
+      void saveSketchoraFile(false);
+    });
+    const removeSaveAsListener = window.sketchora.onMenuSaveAs(() => {
+      void saveSketchoraFile(true);
+    });
+    const removeOpenResultListener =
+      window.sketchora.onOpenResult(applyOpenedFile);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      removeNewListener();
+      removeOpenListener();
+      removeSaveListener();
+      removeSaveAsListener();
+      removeOpenResultListener();
     };
-  }, [openSketchoraFile]);
+  }, [applyOpenedFile, newSketchoraFile, openSketchoraFile, saveSketchoraFile]);
+
+  useEffect(() => {
+    updateWindowTitle(currentFilePath, isDirty);
+  }, [currentFilePath, isDirty, updateWindowTitle]);
 
   const [errorMessage, setErrorMessage] = useState("");
   const isCollabDisabled = isRunningInIframe();
@@ -764,6 +861,10 @@ const ExcalidrawWrapper = () => {
     appState: AppState,
     files: BinaryFiles,
   ) => {
+    if (window.sketchora && !nativeOperationRef.current) {
+      setIsDirty(true);
+    }
+
     if (collabAPI?.isCollaborating()) {
       collabAPI.syncElements(elements);
     }
